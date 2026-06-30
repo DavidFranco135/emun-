@@ -61,11 +61,13 @@ function openSlideover(coupon = null) {
   toggleValueField();
   $("#coupon-backdrop").classList.add("is-open");
   $("#coupon-slideover").classList.add("is-open");
+  $("#coupon-slideover").setAttribute("aria-hidden", "false");
 }
 
 function closeSlideover() {
   $("#coupon-backdrop").classList.remove("is-open");
   $("#coupon-slideover").classList.remove("is-open");
+  $("#coupon-slideover").setAttribute("aria-hidden", "true");
 }
 
 async function handleSubmit(e) {
