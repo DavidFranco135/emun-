@@ -86,11 +86,13 @@ function openSlideover(testimonial = null) {
   $("#tf-upload-status").textContent = "";
   $("#testimonial-backdrop").classList.add("is-open");
   $("#testimonial-slideover").classList.add("is-open");
+  $("#testimonial-slideover").setAttribute("aria-hidden", "false");
 }
 
 function closeSlideover() {
   $("#testimonial-backdrop").classList.remove("is-open");
   $("#testimonial-slideover").classList.remove("is-open");
+  $("#testimonial-slideover").setAttribute("aria-hidden", "true");
 }
 
 async function handleSubmit(e) {
