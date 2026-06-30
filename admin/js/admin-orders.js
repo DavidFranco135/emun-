@@ -92,11 +92,13 @@ function openOrderDetail(order) {
 
   $("#order-backdrop").classList.add("is-open");
   $("#order-slideover").classList.add("is-open");
+  $("#order-slideover").setAttribute("aria-hidden", "false");
 }
 
 function closeOrderDetail() {
   $("#order-backdrop").classList.remove("is-open");
   $("#order-slideover").classList.remove("is-open");
+  $("#order-slideover").setAttribute("aria-hidden", "true");
   activeOrderId = null;
 }
 
