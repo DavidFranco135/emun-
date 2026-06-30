@@ -48,14 +48,16 @@ async function fetchOrFallback(queryFn, fallbackData, label) {
 }
 
 export async function getBanners() {
-  return fetchOrFallback(
-    () =>
-      getDocs(
-        query(collection(db, "banners"), where("active", "==", true), orderBy("order"))
-      ),
+  // Importante: filtramos só por "active" no Firestore (não combinamos com
+  // orderBy aqui) para não depender de um índice composto, que precisaria
+  // ser criado manualmente no console do Firebase. A ordenação por "order"
+  // é feita aqui no código depois de buscar os dados.
+  const banners = await fetchOrFallback(
+    () => getDocs(query(collection(db, "banners"), where("active", "==", true))),
     demoBanners,
     "banners"
   );
+  return [...banners].sort((a, b) => (a.order || 0) - (b.order || 0));
 }
 
 export async function getAllBanners() {
