@@ -13,6 +13,7 @@ import {
 } from "./firestore-service.js";
 import { initLayout } from "./layout.js";
 import { renderProductGrid } from "./product-card.js";
+import { initDragScroll } from "./drag-scroll.js";
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
@@ -157,6 +158,17 @@ function applySettings(settings) {
   $$("[data-email]").forEach((a) => (a.href = `mailto:${settings.email}`));
   $$("[data-phone-text]").forEach((node) => (node.textContent = settings.phone));
   $$("[data-address-text]").forEach((node) => (node.textContent = settings.address));
+
+  if (settings.aboutEyebrow) $("#about-eyebrow").textContent = settings.aboutEyebrow;
+  if (settings.aboutTitle) $("#about-title").textContent = settings.aboutTitle;
+  if (settings.aboutImage) $("#about-image").src = settings.aboutImage;
+  if (settings.aboutText) {
+    $("#about-text").innerHTML = settings.aboutText
+      .split("\n")
+      .filter((p) => p.trim())
+      .map((p) => `<p>${p}</p>`)
+      .join("");
+  }
 }
 
 // ---------- init ----------
@@ -184,6 +196,13 @@ async function init() {
   renderProductGrid("new-grid", newProducts, "Em breve novidades por aqui.");
   renderTestimonials(testimonials);
   applySettings(settings);
+
+  [
+    "featured-grid",
+    "bestsellers-grid",
+    "new-grid",
+    "categories-grid",
+  ].forEach((id) => initDragScroll($(`#${id}`)));
 
   document.body.classList.add("is-loaded");
 }
