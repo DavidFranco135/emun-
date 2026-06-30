@@ -30,6 +30,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 a { text-decoration: none; color: inherit; }
+/* Correção crítica de overflow: navegadores dão aos campos de formulário uma
+   largura mínima de conteúdo que ignora flex/grid, empurrando a página para
+   o lado em telas estreitas. Isso permite que eles encolham normalmente. */
+input, select, textarea, button { min-width: 0; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; }
 ul { list-style: none; }
 img { max-width: 100%; display: block; }
@@ -64,6 +68,8 @@ img { max-width: 100%; display: block; }
   inset: 0 auto 0 0;
   z-index: 200;
   transition: transform 0.3s ease;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .admin-sidebar__brand {
   padding: 26px 24px 20px;
@@ -130,17 +136,40 @@ img { max-width: 100%; display: block; }
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 28px;
+  padding: env(safe-area-inset-top) 28px 0;
   position: sticky;
   top: 0;
   z-index: 100;
 }
-.admin-menu-toggle { display: none; font-size: 20px; }
-.admin-topbar__title { font-family: "Fraunces", serif; font-size: 20px; color: var(--violet-deep); }
-.admin-topbar__user { margin-left: auto; font-size: 13px; color: var(--gray-mid); }
+.admin-menu-toggle { display: none; font-size: 20px; flex-shrink: 0; }
+.admin-topbar__title {
+  font-family: "Fraunces", serif;
+  font-size: 20px;
+  color: var(--violet-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+.admin-topbar__user {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--gray-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40vw;
+  min-width: 0;
+  flex-shrink: 1;
+}
 
 @media (max-width: 880px) {
   .admin-menu-toggle { display: block; }
+}
+@media (max-width: 480px) {
+  .admin-topbar { padding-left: 16px; padding-right: 16px; gap: 10px; }
+  .admin-topbar__user { display: none; }
 }
 
 /* ---------- main content ---------- */
@@ -409,3 +438,43 @@ tbody tr:hover { background: var(--cream); }
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
 .toast.is-visible { opacity: 1; transform: translateY(0); }
+
+/* ============================================================
+   Responsividade — telas pequenas (iPhone/Android)
+   ============================================================ */
+
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* Evita zoom automático do Safari iOS em campos de formulário */
+@media (max-width: 600px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 880px) {
+  .admin-sidebar { padding-top: max(env(safe-area-inset-top), 16px); }
+}
+
+@media (max-width: 700px) {
+  .form-grid,
+  .form-grid--3 {
+    grid-template-columns: 1fr;
+  }
+  .admin-main { padding: 16px; }
+  .panel { padding: 18px; }
+  .stat-card__value { font-size: 24px; }
+  .admin-slideover { padding: 20px; }
+}
+
+@media (max-width: 480px) {
+  .filter-bar input[type="search"] { min-width: 0; flex-basis: 100%; }
+  .filter-bar select { flex: 1; min-width: 0; }
+  .table-actions { flex-wrap: wrap; gap: 4px; }
+  .btn--sm { padding: 8px 10px; }
+}
+
+/* Área de toque mínima recomendada (44px) em botões */
+@media (max-width: 600px) {
+  .btn { min-height: 44px; }
+}
