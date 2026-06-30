@@ -52,6 +52,10 @@ body {
 body.is-loaded { opacity: 1; }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
+/* Correção crítica de overflow: navegadores dão aos campos de formulário uma
+   largura mínima de conteúdo que ignora flex/grid, empurrando a página para
+   o lado em telas estreitas. Isso permite que eles encolham normalmente. */
+input, select, textarea, button { min-width: 0; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; }
 ul { list-style: none; }
 :focus-visible {
@@ -267,7 +271,7 @@ ul { list-style: none; }
   border-bottom: 1px solid var(--gray-line);
   transition: max-height 0.3s ease;
 }
-.search-bar.is-open { max-height: 80px; }
+.search-bar.is-open { max-height: 100px; }
 .search-bar .container { padding-top: 14px; padding-bottom: 14px; }
 .search-bar input {
   width: 100%;
@@ -365,11 +369,19 @@ ul { list-style: none; }
 }
 .hero-nav {
   position: absolute;
-  bottom: 28px;
-  right: 32px;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
   z-index: 2;
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  padding: 0 14px;
+  pointer-events: none;
+}
+.hero-nav .icon-btn {
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.85);
 }
 .hero-dots {
   position: absolute;
@@ -390,7 +402,8 @@ ul { list-style: none; }
 @media (max-width: 640px) {
   .hero-slide__content { padding: 0 24px; }
   .hero-dots { left: 24px; }
-  .hero-nav { display: none; }
+  .hero-nav { padding: 0 8px; }
+  .hero-nav .icon-btn { width: 36px; height: 36px; font-size: 16px; }
 }
 
 /* promo strip */
