@@ -59,8 +59,12 @@ function initSearch() {
   const bar = $("#search-bar");
   const form = $("#search-form");
   trigger?.addEventListener("click", () => {
-    bar.classList.toggle("is-open");
-    if (bar.classList.contains("is-open")) $("#search-input")?.focus();
+    const isOpen = bar.classList.toggle("is-open");
+    if (isOpen) {
+      // pequeno atraso: focar antes da transição de abertura terminar
+      // falha silenciosamente em vários navegadores mobile
+      setTimeout(() => $("#search-input")?.focus(), 120);
+    }
   });
   form?.addEventListener("submit", (e) => {
     e.preventDefault();
