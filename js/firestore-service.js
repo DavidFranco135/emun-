@@ -246,6 +246,79 @@ export async function saveCustomerProfile(uid, data) {
   await setDoc(doc(db, "customers", uid), data, { merge: true });
 }
 
+// ---------- depoimentos ----------
+export async function getAllTestimonials() {
+  return fetchOrFallback(
+    () => getDocs(collection(db, "testimonials")),
+    demoTestimonials,
+    "allTestimonials"
+  );
+}
+
+export async function createTestimonial(data) {
+  if (!isFirebaseConfigured) {
+    const id = nextDemoId("test");
+    demoTestimonials.push({ id, ...data });
+    return id;
+  }
+  const ref = await addDoc(collection(db, "testimonials"), data);
+  return ref.id;
+}
+
+export async function updateTestimonial(id, data) {
+  if (!isFirebaseConfigured) {
+    const idx = demoTestimonials.findIndex((t) => t.id === id);
+    if (idx >= 0) demoTestimonials[idx] = { ...demoTestimonials[idx], ...data };
+    return;
+  }
+  await updateDoc(doc(db, "testimonials", id), data);
+}
+
+export async function deleteTestimonial(id) {
+  if (!isFirebaseConfigured) {
+    const idx = demoTestimonials.findIndex((t) => t.id === id);
+    if (idx >= 0) demoTestimonials.splice(idx, 1);
+    return;
+  }
+  await deleteDoc(doc(db, "testimonials", id));
+}
+
+// ---------- cupons ----------
+export async function getAllCoupons() {
+  return fetchOrFallback(() => getDocs(collection(db, "coupons")), demoCoupons, "allCoupons");
+}
+
+export async function createCoupon(data) {
+  const code = (data.code || "").trim().toUpperCase();
+  if (!isFirebaseConfigured) {
+    const id = nextDemoId("coupon");
+    demoCoupons.push({ id, ...data, code });
+    return id;
+  }
+  const ref = await addDoc(collection(db, "coupons"), { ...data, code });
+  return ref.id;
+}
+
+export async function updateCoupon(id, data) {
+  const patch = { ...data };
+  if (patch.code) patch.code = patch.code.trim().toUpperCase();
+  if (!isFirebaseConfigured) {
+    const idx = demoCoupons.findIndex((c) => c.id === id);
+    if (idx >= 0) demoCoupons[idx] = { ...demoCoupons[idx], ...patch };
+    return;
+  }
+  await updateDoc(doc(db, "coupons", id), patch);
+}
+
+export async function deleteCoupon(id) {
+  if (!isFirebaseConfigured) {
+    const idx = demoCoupons.findIndex((c) => c.id === id);
+    if (idx >= 0) demoCoupons.splice(idx, 1);
+    return;
+  }
+  await deleteDoc(doc(db, "coupons", id));
+}
+
 export async function getStoreSettings() {
   if (!isFirebaseConfigured) return demoSettings;
   try {
