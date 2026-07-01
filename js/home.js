@@ -13,9 +13,10 @@ import {
   submitTestimonial,
 } from "./firestore-service.js";
 import { initLayout } from "./layout.js";
-import { renderProductGrid } from "./product-card.js";
+import { renderProductGrid, renderSkeletonGrid } from "./product-card.js";
 import { initDragScroll } from "./drag-scroll.js";
 import { onCustomerAuthChange } from "./customer-auth.js";
+import { revealOnScroll } from "./scroll-reveal.js";
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
@@ -118,6 +119,7 @@ function renderCategories(categories) {
       `)
     );
   });
+  revealOnScroll(".category-card", grid);
 }
 
 // ---------- testimonials ----------
@@ -145,6 +147,7 @@ function renderTestimonials(items) {
       `)
     );
   });
+  revealOnScroll(".testimonial-card", wrap);
 }
 
 // ---------- newsletter ----------
@@ -242,6 +245,10 @@ async function init() {
   await initLayout();
   initNewsletter();
   initTestimonialForm();
+
+  renderSkeletonGrid("featured-grid", 4);
+  renderSkeletonGrid("bestsellers-grid", 4);
+  renderSkeletonGrid("new-grid", 4);
 
   const [banners, promos, categories, featured, bestSellers, newProducts, testimonials, settings] =
     await Promise.all([
