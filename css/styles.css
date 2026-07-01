@@ -807,6 +807,67 @@ ul { list-style: none; }
 
 /* admin trigger: visually near-invisible on purpose */
 .credit-line { opacity: 0.7; }
+
+/* ============================================================
+   Animações
+   ============================================================ */
+
+/* 1) Revelação suave ao rolar a página */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll { opacity: 1; transform: none; transition: none; }
+}
+
+/* 2) Zoom na foto do produto ao passar o mouse (reforço) */
+.product-card__media { transition: box-shadow 0.3s ease; }
+.product-card__media img { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.product-card:hover .product-card__media img { transform: scale(1.08); }
+
+/* 3) Pulso no ícone de favorito ao clicar */
+@keyframes fav-pulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  60% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.product-card__fav.is-pulsing { animation: fav-pulse 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.product-card__fav { transition: color 0.25s ease; }
+
+/* 4) Skeleton de carregamento (enquanto os dados vêm do servidor) */
+.skeleton-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.skeleton-card__media { aspect-ratio: 4 / 5; }
+.skeleton-card__body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.skeleton-block {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--lilac) 25%, #f4eefb 37%, var(--lilac) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+.skeleton-block--media { width: 100%; height: 100%; border-radius: 0; }
+.skeleton-block--title { height: 16px; width: 80%; }
+.skeleton-block--text { height: 12px; width: 55%; }
+.skeleton-block--price { height: 20px; width: 45%; margin-top: 4px; }
+.skeleton-block--btn { height: 40px; width: 100%; border-radius: 999px; margin-top: 6px; }
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block { animation: none; }
+}
 .admin-trigger {
   width: 6px;
   height: 6px;
