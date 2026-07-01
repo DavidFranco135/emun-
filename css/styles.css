@@ -673,6 +673,49 @@ ul { list-style: none; }
 .testimonial-card__stars { color: var(--gold); display: block; font-size: 14px; margin-bottom: 4px; }
 .testimonial-card__name { font-weight: 600; font-size: 14px; color: var(--violet-deep); }
 
+.testimonial-cta { text-align: center; margin-top: 32px; }
+
+.testimonial-form {
+  max-width: 480px;
+  margin: 28px auto 0;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 28px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.testimonial-form h3 {
+  font-family: var(--font-display);
+  color: var(--violet-deep);
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+.testimonial-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--gray-mid);
+  font-weight: 600;
+}
+.testimonial-form input,
+.testimonial-form textarea {
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-line);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--charcoal);
+  font-weight: 400;
+}
+.testimonial-form textarea { min-height: 90px; resize: vertical; }
+.testimonial-form__stars { display: flex; gap: 4px; font-size: 24px; color: var(--gray-line); }
+.testimonial-form__stars button.is-active { color: var(--gold); }
+.testimonial-form__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.testimonial-form__msg { font-size: 13px; color: #2E7D4F; min-height: 18px; }
+
 /* ============================================================
    Newsletter
    ============================================================ */
