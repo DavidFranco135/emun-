@@ -1,126 +1,278 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Produtos — Painel Emuná</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/admin.css" />
-</head>
-<body>
-<div class="admin-shell">
-  <div id="sidebar-placeholder"></div>
+// ============================================================
+// EMUNÁ ADMIN · Produtos
+// ============================================================
+import { initAdminLayout } from "./admin-layout.js";
+import { showToast } from "./admin-toast.js";
+import {
+  getAllProducts,
+  getAllCategories,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  duplicateProduct,
+} from "../../js/firestore-service.js";
+import { formatBRL } from "../../js/cart.js";
+import { uploadMultipleToImgBB } from "../../js/imgbb-upload.js";
 
-  <main class="admin-main">
-    <div class="panel">
-      <div class="panel__header">
-        <h2>Produtos</h2>
-        <button class="btn btn--primary" id="new-product-btn">+ Novo produto</button>
-      </div>
+const $ = (sel, ctx = document) => ctx.querySelector(sel);
 
-      <div class="filter-bar">
-        <input type="search" id="product-search" placeholder="Buscar por nome ou SKU…" />
-        <select id="product-category-filter"><option value="">Todas as categorias</option></select>
-        <select id="product-stock-filter">
-          <option value="">Todo o estoque</option>
-          <option value="low">Estoque baixo</option>
-          <option value="out">Sem estoque</option>
-        </select>
-      </div>
+let products = [];
+let categories = [];
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th></th><th>Produto</th><th>SKU</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="products-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </main>
-</div>
+async function loadData() {
+  [products, categories] = await Promise.all([getAllProducts(), getAllCategories()]);
+}
 
-<!-- Slide-over: criar/editar produto -->
-<div class="admin-modal-backdrop" id="product-backdrop"></div>
-<div class="admin-slideover" id="product-slideover" aria-hidden="true">
-  <div class="admin-slideover__header">
-    <h2 id="product-form-title">Novo produto</h2>
-    <button class="admin-slideover__close" id="product-form-close" aria-label="Fechar">×</button>
-  </div>
+function categoryName(id) {
+  return categories.find((c) => c.id === id)?.name || "—";
+}
 
-  <form id="product-form">
-    <input type="hidden" id="pf-id" />
-    <div class="form-grid">
-      <label class="field field--wide">Nome
-        <input type="text" id="pf-name" required />
-      </label>
-      <label class="field field--wide">Descrição curta
-        <input type="text" id="pf-short-desc" required />
-      </label>
-      <label class="field field--wide">Descrição longa
-        <textarea id="pf-description"></textarea>
-      </label>
+function populateCategorySelects() {
+  const options = categories.map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
+  $("#pf-category").innerHTML = options;
+  $("#product-category-filter").innerHTML = `<option value="">Todas as categorias</option>${options}`;
+}
 
-      <label class="field">Categoria
-        <select id="pf-category" required></select>
-      </label>
-      <label class="field">SKU
-        <input type="text" id="pf-sku" />
-      </label>
+function currentFilters() {
+  return {
+    q: $("#product-search").value.trim().toLowerCase(),
+    category: $("#product-category-filter").value,
+    stock: $("#product-stock-filter").value,
+  };
+}
 
-      <label class="field">Preço (R$)
-        <input type="number" id="pf-price" step="0.01" min="0" required />
-      </label>
-      <label class="field">Preço promocional (R$)
-        <input type="number" id="pf-promo-price" step="0.01" min="0" />
-      </label>
+function renderTable() {
+  const f = currentFilters();
+  let list = [...products];
 
-      <label class="field">Quantidade em estoque
-        <input type="number" id="pf-stock" min="0" required />
-      </label>
-      <label class="field">Peso (kg)
-        <input type="number" id="pf-weight" step="0.01" min="0" />
-      </label>
+  if (f.q) {
+    list = list.filter(
+      (p) => p.name.toLowerCase().includes(f.q) || (p.sku || "").toLowerCase().includes(f.q)
+    );
+  }
+  if (f.category) list = list.filter((p) => p.categoryId === f.category);
+  if (f.stock === "low") list = list.filter((p) => p.stock > 0 && p.stock <= 5);
+  if (f.stock === "out") list = list.filter((p) => p.stock === 0);
 
-      <label class="field field--wide">Dimensões
-        <input type="text" id="pf-dimensions" placeholder="ex: 30cm x 20cm x 10cm" />
-      </label>
+  const body = $("#products-body");
+  if (!list.length) {
+    body.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhum produto encontrado.</td></tr>`;
+    return;
+  }
 
-      <label class="field field--wide">Vídeo (URL de embed, opcional)
-        <input type="url" id="pf-video" placeholder="https://www.youtube.com/embed/…" />
-      </label>
+  body.innerHTML = list
+    .map((p) => {
+      const isActive = p.active !== false;
+      const badges = [
+        p.featured ? '<span class="badge badge--violet">Destaque</span>' : "",
+        p.promoPrice ? '<span class="badge badge--orange">Promoção</span>' : "",
+        p.isNew ? '<span class="badge badge--green">Novidade</span>' : "",
+        !isActive ? '<span class="badge badge--gray">Inativo</span>' : "",
+      ].join(" ");
+      const stockBadge =
+        p.stock === 0
+          ? '<span class="badge badge--red">Esgotado</span>'
+          : p.stock <= 5
+          ? '<span class="badge badge--orange">Baixo</span>'
+          : "";
 
-      <div class="field field--wide">
-        <span>Fotos do produto</span>
-        <div class="image-thumb-list" id="pf-images-list"></div>
-        <label class="btn btn--ghost btn--sm upload-label">
-          📷 Enviar fotos
-          <input type="file" id="pf-image-upload" accept="image/*" multiple hidden />
-        </label>
-        <p class="upload-status" id="pf-upload-status"></p>
-      </div>
+      return `
+        <tr data-id="${p.id}">
+          <td class="cell-thumb"><img class="table-thumb" src="${p.images?.[0] || ""}" alt="" /></td>
+          <td data-label="Produto">${p.name}</td>
+          <td data-label="SKU">${p.sku || "—"}</td>
+          <td data-label="Categoria">${categoryName(p.categoryId)}</td>
+          <td data-label="Preço">${p.promoPrice ? `<s style="opacity:.5">${formatBRL(p.price)}</s> ${formatBRL(p.promoPrice)}` : formatBRL(p.price)}</td>
+          <td data-label="Estoque">${p.stock} ${stockBadge}</td>
+          <td data-label="Status">${badges || "—"}</td>
+          <td class="cell-actions">
+            <div class="table-actions">
+              <button class="btn btn--ghost btn--sm" data-edit="${p.id}">Editar</button>
+              <button class="btn btn--ghost btn--sm" data-duplicate="${p.id}">Duplicar</button>
+              <button class="btn btn--ghost btn--sm" data-toggle="${p.id}">${isActive ? "Desativar" : "Ativar"}</button>
+              <button class="btn btn--danger btn--sm" data-delete="${p.id}">Excluir</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
 
-      <div class="field field--wide">
-        <span>Visibilidade</span>
-        <div class="toggle-row">
-          <label class="field-checkbox"><input type="checkbox" id="pf-active" checked /> Ativo</label>
-          <label class="field-checkbox"><input type="checkbox" id="pf-featured" /> Em destaque</label>
-          <label class="field-checkbox"><input type="checkbox" id="pf-bestseller" /> Mais vendido</label>
-          <label class="field-checkbox"><input type="checkbox" id="pf-new" /> Novidade</label>
-        </div>
-      </div>
-    </div>
+// ---------- slide-over form ----------
+function openSlideover(product = null) {
+  $("#product-form-title").textContent = product ? "Editar produto" : "Novo produto";
+  $("#pf-id").value = product?.id || "";
+  $("#pf-name").value = product?.name || "";
+  $("#pf-short-desc").value = product?.shortDescription || "";
+  $("#pf-description").value = product?.description || "";
+  $("#pf-category").value = product?.categoryId || categories[0]?.id || "";
+  $("#pf-sku").value = product?.sku || "";
+  $("#pf-price").value = product?.price ?? "";
+  $("#pf-promo-price").value = product?.promoPrice ?? "";
+  $("#pf-stock").value = product?.stock ?? 0;
+  $("#pf-weight").value = product?.weight ?? "";
+  $("#pf-dimensions").value = product?.dimensions || "";
+  $("#pf-video").value = product?.video || "";
+  $("#pf-active").checked = product?.active !== false;
+  $("#pf-featured").checked = !!product?.featured;
+  $("#pf-bestseller").checked = !!product?.bestSeller;
+  $("#pf-new").checked = !!product?.isNew;
 
-    <div class="admin-slideover__footer">
-      <button type="submit" class="btn btn--primary">Salvar produto</button>
-      <button type="button" class="btn btn--ghost" id="product-form-cancel">Cancelar</button>
-    </div>
-  </form>
-</div>
+  currentImages = product?.images ? [...product.images] : [];
+  renderImageThumbs();
+  $("#pf-upload-status").textContent = "";
 
-<script type="module" src="js/admin-products.js"></script>
-</body>
-</html>
+  $("#product-backdrop").classList.add("is-open");
+  $("#product-slideover").classList.add("is-open");
+  $("#product-slideover").setAttribute("aria-hidden", "false");
+}
+
+function closeSlideover() {
+  $("#product-backdrop").classList.remove("is-open");
+  $("#product-slideover").classList.remove("is-open");
+  $("#product-slideover").setAttribute("aria-hidden", "true");
+}
+
+let currentImages = [];
+
+function renderImageThumbs() {
+  const wrap = $("#pf-images-list");
+  wrap.innerHTML = "";
+  currentImages.forEach((url, i) => {
+    const thumb = document.createElement("div");
+    thumb.className = "image-thumb";
+    thumb.innerHTML = `<img src="${url}" alt="" /><button type="button" aria-label="Remover">×</button>`;
+    thumb.querySelector("button").addEventListener("click", () => {
+      currentImages.splice(i, 1);
+      renderImageThumbs();
+    });
+    wrap.appendChild(thumb);
+  });
+}
+
+async function handleImageUpload(e) {
+  const files = e.target.files;
+  if (!files.length) return;
+
+  const statusEl = $("#pf-upload-status");
+  statusEl.className = "upload-status";
+  statusEl.textContent = `Enviando ${files.length} foto${files.length > 1 ? "s" : ""}…`;
+
+  // miniaturas de carregamento, para feedback visual imediato
+  const placeholders = Array.from(files).map(() => {
+    const div = document.createElement("div");
+    div.className = "image-thumb is-uploading";
+    div.textContent = "Enviando…";
+    $("#pf-images-list").appendChild(div);
+    return div;
+  });
+
+  const urls = await uploadMultipleToImgBB(files);
+  placeholders.forEach((p) => p.remove());
+
+  const failed = urls.filter((u) => !u).length;
+  urls.forEach((url) => {
+    if (url) currentImages.push(url);
+  });
+  renderImageThumbs();
+
+  if (failed) {
+    statusEl.className = "upload-status is-error";
+    statusEl.textContent = `${failed} foto${failed > 1 ? "s" : ""} falharam ao enviar. Tente novamente.`;
+  } else {
+    statusEl.textContent = "Fotos enviadas com sucesso.";
+    setTimeout(() => (statusEl.textContent = ""), 2500);
+  }
+  e.target.value = "";
+}
+
+function readForm() {
+  return {
+    name: $("#pf-name").value.trim(),
+    shortDescription: $("#pf-short-desc").value.trim(),
+    description: $("#pf-description").value.trim(),
+    categoryId: $("#pf-category").value,
+    sku: $("#pf-sku").value.trim(),
+    price: parseFloat($("#pf-price").value) || 0,
+    promoPrice: $("#pf-promo-price").value ? parseFloat($("#pf-promo-price").value) : null,
+    stock: parseInt($("#pf-stock").value, 10) || 0,
+    weight: $("#pf-weight").value ? parseFloat($("#pf-weight").value) : null,
+    dimensions: $("#pf-dimensions").value.trim(),
+    video: $("#pf-video").value.trim() || null,
+    images: currentImages,
+    active: $("#pf-active").checked,
+    featured: $("#pf-featured").checked,
+    bestSeller: $("#pf-bestseller").checked,
+    isNew: $("#pf-new").checked,
+  };
+}
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  const id = $("#pf-id").value;
+  const data = readForm();
+
+  if (id) {
+    await updateProduct(id, data);
+    showToast("Produto atualizado.");
+  } else {
+    await createProduct(data);
+    showToast("Produto cadastrado.");
+  }
+
+  closeSlideover();
+  await loadData();
+  renderTable();
+}
+
+// ---------- table actions ----------
+async function handleTableClick(e) {
+  const editId = e.target.closest("[data-edit]")?.dataset.edit;
+  const dupId = e.target.closest("[data-duplicate]")?.dataset.duplicate;
+  const toggleId = e.target.closest("[data-toggle]")?.dataset.toggle;
+  const delId = e.target.closest("[data-delete]")?.dataset.delete;
+
+  if (editId) {
+    openSlideover(products.find((p) => p.id === editId));
+  } else if (dupId) {
+    await duplicateProduct(dupId);
+    showToast("Produto duplicado.");
+    await loadData();
+    renderTable();
+  } else if (toggleId) {
+    const product = products.find((p) => p.id === toggleId);
+    await updateProduct(toggleId, { active: product.active === false });
+    showToast(product.active === false ? "Produto ativado." : "Produto desativado.");
+    await loadData();
+    renderTable();
+  } else if (delId) {
+    if (!confirm("Excluir este produto? Essa ação não pode ser desfeita.")) return;
+    await deleteProduct(delId);
+    showToast("Produto excluído.");
+    await loadData();
+    renderTable();
+  }
+}
+
+async function init() {
+  await initAdminLayout("produtos", "Produtos");
+  await loadData();
+  populateCategorySelects();
+  renderTable();
+
+  $("#new-product-btn").addEventListener("click", () => openSlideover());
+  $("#product-form-close").addEventListener("click", closeSlideover);
+  $("#product-form-cancel").addEventListener("click", closeSlideover);
+  $("#product-backdrop").addEventListener("click", closeSlideover);
+  $("#product-form").addEventListener("submit", handleSubmit);
+  $("#pf-image-upload").addEventListener("change", handleImageUpload);
+
+  $("#product-search").addEventListener("input", renderTable);
+  $("#product-category-filter").addEventListener("change", renderTable);
+  $("#product-stock-filter").addEventListener("change", renderTable);
+
+  $("#products-body").addEventListener("click", handleTableClick);
+}
+
+init();
