@@ -429,8 +429,10 @@ ul { list-style: none; }
   position: relative;
   height: 160px;
   border-radius: var(--radius-md);
-  background-size: cover;
+  background-size: contain;
   background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--violet-deep);
   display: flex;
   align-items: flex-end;
   overflow: hidden;
