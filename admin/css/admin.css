@@ -287,7 +287,65 @@ tbody td {
 }
 tbody tr:hover { background: var(--cream); }
 .table-thumb { width: 42px; height: 42px; border-radius: var(--radius-sm); object-fit: cover; }
-.table-actions { display: flex; gap: 6px; }
+.table-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Em telas pequenas, cada linha vira um cartão empilhado — muito mais
+   fácil de usar do que rolar uma tabela pro lado no celular. */
+@media (max-width: 760px) {
+  .table-wrap table,
+  .table-wrap tbody,
+  .table-wrap tr,
+  .table-wrap td {
+    display: block;
+    width: 100%;
+  }
+  .table-wrap thead { display: none; }
+  .table-wrap tbody tr {
+    background: var(--white);
+    border: 1px solid var(--gray-line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 14px;
+    padding: 8px 16px;
+  }
+  .table-wrap tbody tr:hover { background: var(--white); }
+  .table-wrap td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--gray-line);
+    text-align: right;
+    font-size: 14px;
+  }
+  .table-wrap td:last-child { border-bottom: none; padding-bottom: 12px; }
+  .table-wrap td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--gray-mid);
+    text-align: left;
+    flex-shrink: 0;
+  }
+  /* célula da foto: imagem grande, sem legenda, no topo do cartão */
+  .table-wrap td.cell-thumb {
+    justify-content: center;
+    padding: 14px 0 10px;
+  }
+  .table-wrap td.cell-thumb::before { display: none; }
+  .table-wrap td.cell-thumb .table-thumb {
+    width: 100%;
+    max-width: 260px;
+    height: 160px;
+  }
+  /* célula de ações: botões alinhados à direita, ocupando a linha toda */
+  .table-wrap td.cell-actions { justify-content: flex-end; }
+  .table-wrap td.cell-actions::before { display: none; }
+  .table-wrap .table-actions { justify-content: flex-end; }
+}
 
 .badge {
   display: inline-block;
