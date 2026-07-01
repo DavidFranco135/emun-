@@ -5,6 +5,7 @@ import { initAdminLayout } from "./admin-layout.js";
 import { showToast } from "./admin-toast.js";
 import { getOrders, updateOrderStatus, updateOrderTracking } from "../../js/firestore-service.js";
 import { formatBRL } from "../../js/cart.js";
+import { toWhatsAppNumber } from "../../js/phone-utils.js";
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 
@@ -88,11 +89,46 @@ function openOrderDetail(order) {
     </p>
   `;
   $("#order-status-select").value = order.status;
+  setupWhatsAppButton(order);
   $("#order-tracking-input").value = order.trackingCode || "";
 
   $("#order-backdrop").classList.add("is-open");
   $("#order-slideover").classList.add("is-open");
   $("#order-slideover").setAttribute("aria-hidden", "false");
+}
+
+function setupWhatsAppButton(order) {
+  const btn = $("#order-whatsapp-btn");
+  const number = toWhatsAppNumber(order.customerPhone);
+
+  if (!number) {
+    btn.classList.add("btn--ghost");
+    btn.classList.remove("btn--gold");
+    btn.textContent = "Sem telefone cadastrado";
+    btn.removeAttribute("href");
+    btn.style.pointerEvents = "none";
+    btn.style.opacity = "0.5";
+    return;
+  }
+
+  btn.classList.add("btn--gold");
+  btn.classList.remove("btn--ghost");
+  btn.textContent = "💬 Confirmar com o cliente";
+  btn.style.pointerEvents = "";
+  btn.style.opacity = "";
+
+  let message = `Olá, ${order.customerName}! Aqui é da Emuná. `;
+  if (order.status === "pendente") {
+    message += `Seu pedido #${order.id} (${formatBRL(order.total)}) está registrado e aguardando o pagamento.`;
+  } else if (order.status === "pago") {
+    message += `Recebemos o pagamento do seu pedido #${order.id}. Já estamos preparando para envio! 💜`;
+  } else if (order.status === "enviado") {
+    message += `Seu pedido #${order.id} foi enviado!${order.trackingCode ? ` Código de rastreio: ${order.trackingCode}.` : ""}`;
+  } else {
+    message += `Sobre o seu pedido #${order.id}: `;
+  }
+
+  btn.href = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 
 function closeOrderDetail() {
@@ -145,6 +181,18 @@ async function init() {
   $("#order-save-btn").addEventListener("click", saveOrderChanges);
   $("#order-cancel-btn").addEventListener("click", cancelOrder);
   $("#order-print-btn").addEventListener("click", printOrder);
+
+  const refreshWhatsAppMessage = () => {
+    const current = orders.find((o) => o.id === activeOrderId);
+    if (!current) return;
+    setupWhatsAppButton({
+      ...current,
+      status: $("#order-status-select").value,
+      trackingCode: $("#order-tracking-input").value.trim(),
+    });
+  };
+  $("#order-status-select").addEventListener("change", refreshWhatsAppMessage);
+  $("#order-tracking-input").addEventListener("input", refreshWhatsAppMessage);
 }
 
 init();
