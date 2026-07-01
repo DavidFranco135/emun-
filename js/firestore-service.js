@@ -20,6 +20,7 @@ import {
   setDoc,
   deleteDoc,
   serverTimestamp,
+  arrayUnion,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import {
   demoBanners,
@@ -116,11 +117,24 @@ export async function getNewProducts() {
 }
 
 export async function getTestimonials() {
-  return fetchOrFallback(
-    () => getDocs(query(collection(db, "testimonials"), limit(6))),
+  const all = await fetchOrFallback(
+    () => getDocs(query(collection(db, "testimonials"), limit(20))),
     demoTestimonials,
     "testimonials"
   );
+  // "approved !== false" trata depoimentos antigos sem esse campo como aprovados
+  return all.filter((t) => t.approved !== false).slice(0, 6);
+}
+
+/** Envio público de depoimento (feito pelo cliente na loja). Entra sempre
+ * como pendente de aprovação — só aparece na Home depois que você aprovar
+ * em Depoimentos, no painel administrativo. */
+export async function submitTestimonial(data) {
+  return createTestimonial({ ...data, approved: false, submittedAt: new Date().toISOString() });
+}
+
+export async function approveTestimonial(id) {
+  return updateTestimonial(id, { approved: true });
 }
 
 /** Todos os produtos ativos — usado pela página de catálogo (loja.html),
@@ -382,6 +396,20 @@ export async function duplicateProduct(id) {
   if (!original) return null;
   const { id: _omit, ...rest } = original;
   return createProduct({ ...rest, name: `${rest.name} (cópia)` });
+}
+
+/** Adiciona uma avaliação ao produto de forma segura (não sobrescreve
+ * avaliações já existentes, mesmo com várias pessoas avaliando ao mesmo
+ * tempo). */
+export async function addProductReview(productId, review) {
+  if (!isFirebaseConfigured) {
+    const idx = demoProducts.findIndex((p) => p.id === productId);
+    if (idx >= 0) {
+      demoProducts[idx].reviews = [review, ...(demoProducts[idx].reviews || [])];
+    }
+    return;
+  }
+  await setDoc(doc(db, "products", productId), { reviews: arrayUnion(review) }, { merge: true });
 }
 
 // ---------- categorias ----------
