@@ -3,7 +3,7 @@
 // ============================================================
 import { getAllProducts, getCategories } from "./firestore-service.js";
 import { initLayout } from "./layout.js";
-import { renderProductGrid } from "./product-card.js";
+import { renderProductGrid, renderSkeletonGrid } from "./product-card.js";
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
@@ -141,6 +141,7 @@ function applyTitleFromParams() {
 
 async function init() {
   await initLayout();
+  renderSkeletonGrid("shop-grid", 8);
 
   const params = getParams();
   const categoryFromUrl = params.get("categoria");
