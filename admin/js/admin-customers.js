@@ -43,13 +43,13 @@ function renderTable() {
     .map(
       (c) => `
       <tr data-email="${c.email}">
-        <td>${c.name}</td>
-        <td>${c.email}</td>
-        <td>${c.ordersCount}</td>
-        <td>${formatBRL(c.totalSpent)}</td>
-        <td>${new Date(c.lastOrderAt).toLocaleDateString("pt-BR")}</td>
-        <td>${c.blocked ? '<span class="badge badge--red">Bloqueado</span>' : '<span class="badge badge--green">Ativo</span>'}</td>
-        <td><button class="btn btn--ghost btn--sm" data-view="${c.email}">Ver</button></td>
+        <td data-label="Cliente">${c.name}</td>
+        <td data-label="E-mail">${c.email}</td>
+        <td data-label="Pedidos">${c.ordersCount}</td>
+        <td data-label="Total gasto">${formatBRL(c.totalSpent)}</td>
+        <td data-label="Última compra">${new Date(c.lastOrderAt).toLocaleDateString("pt-BR")}</td>
+        <td data-label="Status">${c.blocked ? '<span class="badge badge--red">Bloqueado</span>' : '<span class="badge badge--green">Ativo</span>'}</td>
+        <td class="cell-actions"><button class="btn btn--ghost btn--sm" data-view="${c.email}">Ver</button></td>
       </tr>
     `
     )
