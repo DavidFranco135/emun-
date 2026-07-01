@@ -85,35 +85,43 @@ export async function getCategories() {
   );
 }
 
+/** Ordena uma lista pelo campo "order" (menor primeiro). Produtos sem esse
+ * campo (cadastrados antes dessa função existir) vão para o final. */
+function sortByOrder(list) {
+  return [...list].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+}
+
 export async function getFeaturedProducts() {
-  return fetchOrFallback(
+  const result = await fetchOrFallback(
     () =>
       getDocs(
-        query(collection(db, "products"), where("featured", "==", true), limit(8))
+        query(collection(db, "products"), where("featured", "==", true), limit(20))
       ),
     demoProducts.filter((p) => p.featured),
     "featuredProducts"
   );
+  return sortByOrder(result).slice(0, 8);
 }
 
 export async function getBestSellers() {
-  return fetchOrFallback(
+  const result = await fetchOrFallback(
     () =>
       getDocs(
-        query(collection(db, "products"), where("bestSeller", "==", true), limit(8))
+        query(collection(db, "products"), where("bestSeller", "==", true), limit(20))
       ),
     demoProducts.filter((p) => p.bestSeller),
     "bestSellers"
   );
+  return sortByOrder(result).slice(0, 8);
 }
 
 export async function getNewProducts() {
-  return fetchOrFallback(
-    () =>
-      getDocs(query(collection(db, "products"), where("isNew", "==", true), limit(8))),
+  const result = await fetchOrFallback(
+    () => getDocs(query(collection(db, "products"), where("isNew", "==", true), limit(20))),
     demoProducts.filter((p) => p.isNew),
     "newProducts"
   );
+  return sortByOrder(result).slice(0, 8);
 }
 
 export async function getTestimonials() {
@@ -140,11 +148,12 @@ export async function approveTestimonial(id) {
 /** Todos os produtos ativos — usado pela página de catálogo (loja.html),
  * que aplica filtros de categoria/preço/disponibilidade no cliente. */
 export async function getAllProducts() {
-  return fetchOrFallback(
+  const result = await fetchOrFallback(
     () => getDocs(collection(db, "products")),
     demoProducts,
     "allProducts"
   );
+  return sortByOrder(result);
 }
 
 export async function getProductById(id) {
@@ -391,6 +400,12 @@ export async function deleteProduct(id) {
   await deleteDoc(doc(db, "products", id));
 }
 
+/** Recebe os IDs de produtos já na nova ordem desejada e grava o campo
+ * "order" (1, 2, 3...) de cada um. Usado pelo arrastar-e-soltar do admin. */
+export async function reorderProducts(orderedIds) {
+  await Promise.all(orderedIds.map((id, i) => updateProduct(id, { order: i + 1 })));
+}
+
 export async function duplicateProduct(id) {
   const original = await getProductById(id);
   if (!original) return null;
@@ -445,7 +460,12 @@ export async function deleteCategory(id) {
   await deleteDoc(doc(db, "categories", id));
 }
 
-// ---------- pedidos ----------
+/** Recebe os IDs de categorias já na nova ordem desejada e grava o campo
+ * "order" (1, 2, 3...) de cada uma. Usado pelo arrastar-e-soltar do admin. */
+export async function reorderCategories(orderedIds) {
+  await Promise.all(orderedIds.map((id, i) => updateCategory(id, { order: i + 1 })));
+}
+
 // ---------- pedidos ----------
 export async function createOrder(data) {
   const order = { ...data, status: data.status || "pendente", createdAt: new Date().toISOString() };
