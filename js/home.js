@@ -10,10 +10,12 @@ import {
   getNewProducts,
   getTestimonials,
   getStoreSettings,
+  submitTestimonial,
 } from "./firestore-service.js";
 import { initLayout } from "./layout.js";
 import { renderProductGrid } from "./product-card.js";
 import { initDragScroll } from "./drag-scroll.js";
+import { onCustomerAuthChange } from "./customer-auth.js";
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
@@ -179,10 +181,69 @@ function applySettings(settings) {
   }
 }
 
+// ---------- formulário público de depoimento ----------
+function initTestimonialForm() {
+  const cta = $("#open-testimonial-form-btn");
+  const form = $("#testimonial-form");
+  const ctaWrap = $("#testimonial-cta");
+  let selectedStar = 5;
+
+  onCustomerAuthChange((session) => {
+    if (session?.name) $("#tf-pub-name").value = session.name;
+  });
+
+  const stars = $$("#tf-pub-stars button");
+  const syncStars = () =>
+    stars.forEach((b) => b.classList.toggle("is-active", Number(b.dataset.star) <= selectedStar));
+  syncStars();
+  stars.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedStar = Number(btn.dataset.star);
+      syncStars();
+    });
+  });
+
+  cta?.addEventListener("click", () => {
+    ctaWrap.hidden = true;
+    form.hidden = false;
+  });
+  $("#cancel-testimonial-form-btn")?.addEventListener("click", () => {
+    form.hidden = true;
+    ctaWrap.hidden = false;
+  });
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Enviando…";
+
+    await submitTestimonial({
+      name: $("#tf-pub-name").value.trim(),
+      text: $("#tf-pub-text").value.trim(),
+      rating: selectedStar,
+    });
+
+    form.reset();
+    selectedStar = 5;
+    syncStars();
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Enviar depoimento";
+    $("#testimonial-form-msg").textContent =
+      "Obrigada! Seu depoimento foi enviado e vai aparecer aqui assim que aprovarmos. ✦";
+    setTimeout(() => {
+      form.hidden = true;
+      ctaWrap.hidden = false;
+      $("#testimonial-form-msg").textContent = "";
+    }, 3200);
+  });
+}
+
 // ---------- init ----------
 async function init() {
   await initLayout();
   initNewsletter();
+  initTestimonialForm();
 
   const [banners, promos, categories, featured, bestSellers, newProducts, testimonials, settings] =
     await Promise.all([
