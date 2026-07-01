@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Loja — Emuná</title>
 <meta name="description" content="Todos os produtos Emuná: crochê, bijuterias, canecas, livros e produtos digitais." />
 <link rel="manifest" href="manifest.json" />
@@ -29,7 +29,13 @@
   <section class="section section--tight">
     <div class="container shop-layout">
 
+      <div class="filters-backdrop" id="filters-backdrop"></div>
       <aside class="shop-filters" id="shop-filters">
+        <div class="shop-filters__header">
+          <h2>Filtros</h2>
+          <button class="shop-filters__close" id="close-filters-btn" aria-label="Fechar filtros">×</button>
+        </div>
+
         <div class="filter-block">
           <h3>Categorias</h3>
           <ul id="filter-categories" class="filter-list"></ul>
@@ -60,10 +66,12 @@
         </div>
 
         <button class="btn btn--ghost btn--full" id="clear-filters">Limpar filtros</button>
+        <button class="btn btn--primary btn--full shop-filters__apply" id="apply-filters-btn">Ver resultados</button>
       </aside>
 
       <div class="shop-results">
         <div class="shop-results__bar">
+          <button class="btn btn--ghost shop-filters__toggle" id="open-filters-btn">☰ Filtros</button>
           <span id="results-count" class="results-count"></span>
           <select id="sort-select" aria-label="Ordenar por">
             <option value="relevance">Mais relevantes</option>
