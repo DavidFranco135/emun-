@@ -8,8 +8,10 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  reorderCategories,
 } from "../../js/firestore-service.js";
 import { uploadImageToImgBB } from "../../js/imgbb-upload.js";
+import { initDragReorder } from "./drag-reorder.js";
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 
@@ -23,13 +25,14 @@ async function loadData() {
 function renderTable() {
   const body = $("#categories-body");
   if (!categories.length) {
-    body.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhuma categoria cadastrada.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma categoria cadastrada.</td></tr>`;
     return;
   }
   body.innerHTML = categories
     .map(
       (c) => `
-      <tr data-id="${c.id}">
+      <tr data-id="${c.id}" draggable="true">
+        <td class="cell-actions" style="width:1%"><span class="drag-handle" title="Arrastar para reordenar">⠿</span></td>
         <td class="cell-thumb"><img class="table-thumb" src="${c.image || ""}" alt="" /></td>
         <td data-label="Nome">${c.name}</td>
         <td data-label="Ícone">${c.icon || "—"}</td>
@@ -147,6 +150,13 @@ async function init() {
   $("#category-form").addEventListener("submit", handleSubmit);
   $("#cf-image-upload").addEventListener("change", handleImageUpload);
   $("#categories-body").addEventListener("click", handleTableClick);
+
+  initDragReorder($("#categories-body"), async (orderedIds) => {
+    await reorderCategories(orderedIds);
+    showToast("Ordem das categorias atualizada.");
+    await loadData();
+    renderTable();
+  });
 }
 
 init();
