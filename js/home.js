@@ -40,9 +40,7 @@ function renderHero(banners) {
     const hasText = !!(b.title || b.subtitle);
     track.appendChild(
       el(`
-        <div class="hero-slide">
-          <div class="hero-slide__bg-blur" style="background-image:url('${b.image}')"></div>
-          <div class="hero-slide__bg-sharp" style="background-image:url('${b.image}')"></div>
+        <div class="hero-slide" style="background-image:url('${b.image}')">
           ${
             hasText
               ? `
