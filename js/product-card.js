@@ -35,7 +35,7 @@ export function productCard(p) {
         </div>
         ${lowStock ? `<p class="stock-warning">Últimas ${p.stock} unidades</p>` : ""}
         <button class="btn btn--primary btn--full" ${outOfStock ? "disabled" : ""} data-add="${p.id}">
-          ${outOfStock ? "Indisponível" : "Adicionar ao carrinho"}
+          ${outOfStock ? "Indisponível" : "Adicionar"}
         </button>
       </div>
     </article>
@@ -58,7 +58,7 @@ export function renderProductGrid(containerId, products, emptyMessage = "Nenhum 
       const product = products.find((p) => p.id === addBtn.dataset.add);
       addItem(product, 1);
       addBtn.textContent = "Adicionado ✓";
-      setTimeout(() => (addBtn.textContent = "Adicionar ao carrinho"), 1400);
+      setTimeout(() => (addBtn.textContent = "Adicionar"), 1400);
       return;
     }
     const favBtn = e.target.closest("[data-fav]");
